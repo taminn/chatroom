@@ -202,7 +202,10 @@ def add_user(addr,username):
 def del_user(addr):
     global user_list
     del_username=user_list[addr]
-    del user_list[addr]
+    try:
+        del user_list[addr]
+    except:
+        pass
     add_log("lost connect "+addr+" "+del_username)
 
 def send_msg(user_ip,msg):
@@ -220,11 +223,12 @@ def forward_msg(ip,msg):
     global user_list
     global msg_list
     global user_list_lock
+    global host
     msg_list.append(UserMsg(ip,user_list[ip],int(time.time()),msg))
     user_list_lock.acquire()
     username=user_list[ip]
     for user_ip in user_list.keys():
-        if ip!=user_ip:
+        if ip!=user_ip and user_ip!=host:
              send_msg_thread=threading.Thread(target=send_msg,args=(user_ip,username+':'+msg))
              send_msg_thread.start()
     user_list_lock.release()
@@ -236,7 +240,8 @@ def open_server():
     open_db()
     auto_write_msg_thread=threading.Thread(target=auto_write_msg_to_db(),args=())
     auto_write_msg_thread.start()
-    #user_list[host]="admin"
+    user_list[host]="admin"
+
     server_socket=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     server_socket.bind((host,port))
     server_socket.listen(5)
